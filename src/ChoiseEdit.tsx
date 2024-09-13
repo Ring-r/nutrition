@@ -48,12 +48,13 @@ export function ChoiseEdit({ editing_food, onApply, onCancel }: ChoiseParams) {
   return (
     <HStack>
       <Button appearance="ghost" color="green" disabled={foodValueTypeError} onClick={() => onApply(editing_food, foodName, getFoodValue() ?? 0)}>V</Button>
-      <Button appearance="ghost" color="red" onClick={() => onCancel()}>X</Button>
 
       <Input color="blue" disabled defaultValue={`${editing_food.name} (${food_value_max}${editing_food.value_name})`} />
 
       <Input value={foodName} onChange={setFoodName} />
       <InputNumber color='red' value={foodValue} onChange={setFoodValue} formatter={value => `${value} ${editing_food.value_name}`} style={foodValueError ? { borderColor: "red" } : undefined} />
+
+      <Button appearance="ghost" color="red" onClick={() => onCancel()}>X</Button>
     </HStack>
   );
 }

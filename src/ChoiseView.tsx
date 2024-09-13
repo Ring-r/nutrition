@@ -18,12 +18,12 @@ function ChoiseView({ choise, onApplyChoise }: ChoiseParams) {
 
   const choise_elements = choise.food_data_list.map(food_data => (
     <Button key={food_data.name} appearance={!isFull ? "ghost" : undefined} color={!isFull ? "orange" : undefined} onClick={() => onApplyChoise(choise.name, food_data.name)}>
-      {food_data.name} {Math.round(choise.value * food_data.value)}{food_data.value_name}
+      {food_data.name} {Math.floor(choise.value * food_data.value)}{food_data.value_name}
     </Button>
   ));
 
   return (
-    <HStack>
+    <HStack wrap>
       <Text weight="bold">{choise.name}: </Text>
       {choise_elements}
     </HStack>

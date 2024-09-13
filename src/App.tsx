@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Button, FlexboxGrid, HStack, Panel, Tabs } from 'rsuite';
+import { Button, FlexboxGrid, HStack, Panel, Tabs, VStack } from 'rsuite';
 import 'rsuite/dist/rsuite.min.css';
 import './App.css';
 import ChoiseEdit from './ChoiseEdit';
-import { Choise, EditingFood, getMealReveptionDataList, MealReception, MealReceptionData, ProcessedFood, ProcessedMealReception } from './data';
+import { Choise, db, EditingFood, getMealReveptionDataList, MealReception, MealReceptionData, ProcessedFood, ProcessedMealReception, storeName } from './data';
 import MealReceptionView from './MealReceptionView';
 import ProcessedMealReceptionView from './ProcessedMealReceptionView';
 
@@ -16,7 +16,7 @@ function App() {
 
   const [mealReceptionList, setMealReceptionList] = useState<MealReception[]>(initMealReceptionList);
 
-  const [fixedMealReceptionList, setFixedMealReceptionList] = useState<ProcessedMealReception[]>([]);
+  const [reportMealReceptionList, setReportMealReceptionList] = useState<ProcessedMealReception[]>([]);
 
 
   function calcChoiseValue(choise_name: string) {
@@ -77,7 +77,6 @@ function App() {
       choise = meal_reception.choise_list.find(item => item.name === choise_name);
       if (choise) break;
     }
-    console.log(choise);
     if (!choise) throw new Error("something wrong. there is not necessary `choise_name`.");
 
     const food_data = choise.food_data_list.find(item => item.name === food_name);
@@ -111,11 +110,25 @@ function App() {
   }
 
   const applyMealReception = () => {
-    const fixedMealReceprion: ProcessedMealReception = {
-      date: new Date(),
-      food_list: unfixedFoodList,
+    const date = new Date(new Date().toDateString());
+
+    const equalDate = (item: Date, other: Date) => {
+      return item.getFullYear() === other.getFullYear() && item.getDay() === other.getDay();
     }
-    setFixedMealReceptionList([...fixedMealReceptionList, fixedMealReceprion]);
+    const fixed_meal_reception = reportMealReceptionList.find(item => equalDate(item.date, date)) ?? { date: date, food_list: [] };
+    fixed_meal_reception.food_list.push(unfixedFoodList);
+
+    setReportMealReceptionList([...reportMealReceptionList.filter(item => !equalDate(item.date, date)), fixed_meal_reception]);
+
+    const request = db.transaction([storeName], "readonly").objectStore(storeName).get(date);
+    request.onsuccess = () => {
+      const data: ProcessedMealReception = request.result ?? { date: date, food_list: [unfixedFoodList] }
+      data.food_list.push(unfixedFoodList);
+      db.transaction([storeName], "readwrite").objectStore(storeName).put(data);
+    };
+    request.onerror = () => {
+      console.error("Unable to retrieve data:", request.error);
+    };
 
     setFixedFoodList([...fixedFoodList, ...unfixedFoodList]);
     setUnfixedFoodList([])
@@ -129,13 +142,19 @@ function App() {
     <MealReceptionView key={mealReception.name} meal_reception={mealReception} onApplyFood={editFood} />
   ));
 
-  const report = fixedMealReceptionList.map(item => {
-    const text = item.food_list.map(food => {
-      const food_name = food.name === food.name_real ? food.name : `${food.name_real} / ${food.name}`;
-      const food_value = food.value === food.value_real ? food.value : `${food.value_real}/${food.value}`;
-      return <span>{food_name} ({food_value}{food.value_name}); </span>
-    });
-    return <HStack><span >{item.date.toLocaleDateString("ua-UA")}: </span>{text}</HStack>
+  function ReportFoodView(food: ProcessedFood) {
+    const food_name = food.name === food.name_real ? food.name : `${food.name_real} / ${food.name}`;
+    const food_value = food.value === food.value_real ? food.value : `${food.value_real}/${food.value}`;
+    return <span key={food.name}>{food_name} ({food_value}{food.value_name}); </span>
+  }
+  function ReportFoodListView(food_list: ProcessedFood[]) {
+    const food_list_view = food_list.map(food => { return ReportFoodView(food) });
+    return <HStack wrap>{food_list_view}</HStack>
+  }
+
+  const report_meal_reception_list_view = reportMealReceptionList.map(report_meal_reception => {
+    const report_meal_reception_view = report_meal_reception.food_list.map(food_list => { return ReportFoodListView(food_list) })
+    return <VStack><h2>{report_meal_reception.date.toDateString()}</h2>{report_meal_reception_view}</VStack>
   })
 
   return (
@@ -154,7 +173,7 @@ function App() {
           )}
         </Tabs.Tab>
         <Tabs.Tab eventKey="2" title="report">
-          {report}
+          {report_meal_reception_list_view}
         </Tabs.Tab>
       </Tabs>
     </div>
