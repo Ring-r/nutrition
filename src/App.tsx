@@ -1,278 +1,165 @@
 import { useEffect, useState } from 'react';
-import { Button, HStack, Panel, Text } from 'rsuite';
+import { Button, FlexboxGrid, HStack, Panel, Tabs } from 'rsuite';
 import 'rsuite/dist/rsuite.min.css';
 import './App.css';
-
-
-
-interface Food {
-  name: string;
-  value: number;
-  value_name: string;
-}
-
-interface Choise {
-  name: string;
-  food: Food;
-}
-
-interface ChoiseData {
-  name: string;
-  foods: Food[];
-}
-
-const choises_data: ChoiseData[] = [
-  {
-    name: "а",
-    foods: [
-      {name: "бобові", value: 45, value_name: "г"},
-      {name: "картопля", value: 150, value_name: "г"},
-      {name: "кукурудза свіжа", value: 150, value_name: "г"},
-      {name: "пластівці", value: 45, value_name: "г"},
-      {name: "булгур", value: 45, value_name: "г"},
-      {name: "гречка", value: 45, value_name: "г"},
-      {name: "рис (не шліфований)",value: 45, value_name: "г"},
-      {name: "будь-яка крупа",value: 45, value_name: "г"},
-      {name: "цільнозернове борошно",value: 45, value_name: "г"},
-      {name: "хлібці", value: 65, value_name: "г"},
-      {name: "цільнозерновий хліб", value: 70, value_name: "г"},
-      {name: "макарони т.с.", value: 45, value_name: "г"},
-      {name: "лаваш", value: 65, value_name: "г"},    
-    ],
-  },
-  {
-    name: "б",
-    foods: [
-      {name: "молоко (1,5-2,5%)", value: 200, value_name: "г"},
-      {name: "кефір (1,5-2,5%)", value: 200, value_name: "г"},
-      {name: "несолодкий йогурт (1,5-2,5%)", value: 200, value_name: "г"},  
-    ],
-  },
-  {
-    name: "в",
-    foods: [
-      {name: "будь-що (солодощі, снеки, ковбаса тощо)", value: 75, value_name: "г"},
-    ],
-  },
-  {
-    name: "г",
-    foods: [
-      {name: "бобові", value: 45, value_name: "г"},
-      {name: "картопля", value: 150, value_name: "г"},
-      {name: "кукурудза свіжа", value: 150, value_name: "г"},
-      {name: "пластівці", value: 45, value_name: "г"},
-      {name: "булгур", value: 45, value_name: "г"},
-      {name: "гречка", value: 45, value_name: "г"},
-      {name: "рис (не шліфований)", value: 45, value_name: "г"},
-      {name: "будь-яка крупа", value: 45, value_name: "г"},
-      {name: "цільнозернове борошно", value: 45, value_name: "г"},
-      {name: "хлібці", value: 65, value_name: "г"},
-      {name: "цільнозерновий хліб", value: 70, value_name: "г"},
-      {name: "макарони т.с.", value: 45, value_name: "г"},
-      {name: "лаваш", value: 65, value_name: "г"},
-    ],  
-  },
-  {
-    name: "д",
-    foods: [
-      {name: "телятина", value: 150, value_name: "г"},
-      {name: "печінка", value: 150, value_name: "г"},
-      {name: "куряче або індиче філе", value: 175, value_name: "г"},
-      {name: "риба (до 5% жиру)", value: 180, value_name: "г"},
-      {name: "риба (від 5% жиру)", value: 120, value_name: "г"},
-      {name: "яйця", value: 3, value_name: "шт"},
-      {name: "морепродукти", value: 200, value_name: "г"},  
-    ],  
-  },
-  {
-    name: "е",
-    foods: [
-      {name: "овочі (квашені також і зелень)", value: 300, value_name: "г"},
-    ],  
-  },
-  {
-    name: "є",
-    foods: [
-      {name: "будь-яка олія", value: 10, value_name: "г"},
-      {name: "майонез", value: 13, value_name: "г"},
-      {name: "авокадо", value: 55, value_name: "г"},
-      {name: "оливки", value: 70, value_name: "г"},
-      {name: "гірчиця", value: 24, value_name: "г"},
-      {name: "кетчуп", value: 36, value_name: "г"},  
-    ],  
-  },
-  {
-    name: "ж",
-    foods: [
-      {name: "сир зернистий (творог) 5% жиру", value: 160, value_name: "г"},
-      {name: "сири м‘які, тверді, плавлені ", value: 55, value_name: "г"},
-      {name: "сметана 15%", value: 110, value_name: "г"},
-      {name: "масло", value: 27, value_name: "г"},
-      {name: "сало", value: 19, value_name: "г"},
-      {name: "кефір 2.5%", value: 360, value_name: "г"},
-      {name: "несолодкий йогурт 1,6% жиру", value: 370, value_name: "г"},
-      {name: "молоко 2.5%", value: 360, value_name: "г"},  
-    ],  
-  },
-  {
-    name: "з",
-    foods: [
-      {name: "фрукти та ягоди (окрім банани, виноград, хурма чи манго)", value: 300, value_name: "г"},
-      {name: "фрукти та ягоди (якщо це банани, виноград, хурма чи манго)", value: 250, value_name: "г"},  
-    ],  
-  },
-  {
-    name: "и",
-    foods: [
-      {name: "грецьких горіхи", value: 3, value_name: "шт"},
-      {name: "будь-які горіхів або насіння", value: 20, value_name: "г"},  
-    ],  
-  },
-  {
-    name: "і",
-    foods: [
-      {name: "телятина", value: 150, value_name: "г"},
-      {name: "печінка", value: 150, value_name: "г"},
-      {name: "куряче або індиче філе", value: 175, value_name: "г"},
-      {name: "риба (до 5% жиру)", value: 180, value_name: "г"},
-      {name: "риба (від 5% жиру)", value: 120, value_name: "г"},
-      {name: "яйця", value: 3, value_name: "шт"},
-      {name: "морепродукти", value: 200, value_name: "г"},  
-    ],  
-  },
-  {
-    name: "ї",
-    foods: [
-      {name: "овочі (квашені також і зелень)", value: 300, value_name: "г"},
-    ],  
-  },
-  {
-    name: "й",
-    foods: [
-      {name: "будь-яка олія", value: 10, value_name: "г"},
-      {name: "майонез", value: 13, value_name: "г"},
-      {name: "авокадо", value: 55, value_name: "г"},
-      {name: "оливки", value: 70, value_name: "г"},
-      {name: "гірчиця", value: 24, value_name: "г"},
-      {name: "кетчуп", value: 36, value_name: "г"},  
-    ],  
-  },
-]
-
-// todo: use to auto generate components
-// const meal_reception_data = [
-//   [0, 1, 2, ],
-//   [3, 4, 5, 6, ],
-//   [7, 8, 9, ],
-//   [10, 11, 12, ],
-// ]
-
-interface MealReception {
-  date: Date;
-  choises: Choise[];
-}
-
-function MealReceptionView({currentChoises, delChoise, saveMealReception}: {currentChoises: Choise[], delChoise: (choise: Choise) => void, saveMealReception: () => void}) {
-
-  const choises_elements = currentChoises.map(choise => (
-    <Button onClick={() => delChoise(choise)}>{choise.food.name} ({choise.food.value}{choise.food.value_name})</Button>
-  ));
-
-  return (
-    <Panel header='meal reception' bordered>
-      {choises_elements}
-      {currentChoises.length > 0 && <Button appearance="primary" color="red" onClick={() => saveMealReception()}>save</Button>}
-    </Panel>
-  );
-}
-
-function ChoiseView({choise, choises, addChoise}: {choise: ChoiseData, choises: Choise[], addChoise: (choise_name: string, food: Food) => void}) {
-  const [visibility, setVisibility] = useState<boolean>(true);
-
-  useEffect(() => {
-    setVisibility(!choises.find(item => item.name === choise.name));
-  }, [choises]);
-
-  const choise_elements = choise.foods.map(item => (
-    <Button onClick={() => addChoise(choise.name, item)}>{item.name} {item.value}{item.value_name}</Button>
-  ));
-
-  return visibility? (
-    <HStack>
-      <Text weight="bold">{choise.name}: </Text>
-      {choise_elements}
-    </HStack>
-  ):<></>;
-}
+import ChoiseEdit from './ChoiseEdit';
+import { Choise, EditingFood, getMealReveptionDataList, MealReception, MealReceptionData, ProcessedFood, ProcessedMealReception } from './data';
+import MealReceptionView from './MealReceptionView';
+import ProcessedMealReceptionView from './ProcessedMealReceptionView';
 
 function App() {
-  const [currentChoises, setCurrentChoises] = useState<Choise[]>([]);
-  const [choises, setChoises] = useState<Choise[]>([]);
-  const [mealReceptions, setMealReceptions] = useState<MealReception[]>([]);
+  const [meal_reception_data_list] = useState<MealReceptionData[]>(getMealReveptionDataList());
 
-  const addChoise = (choise_name: string, food: Food) => {
-    setChoises([...choises, {name: choise_name, food: food}])
-    setCurrentChoises([...currentChoises, {name: choise_name, food: food}])
-  }
+  const [editingFood, setEditingFood] = useState<EditingFood | null>(null);
+  const [unfixedFoodList, setUnfixedFoodList] = useState<ProcessedFood[]>([]);
+  const [fixedFoodList, setFixedFoodList] = useState<ProcessedFood[]>([]);
 
-  const delChoise = (choise: Choise) => {
-    setChoises(
-      choises.filter(item => {return item.name !== choise.name && item.food.name !== choise.food.name})
-    );
-    setCurrentChoises(
-      currentChoises.filter(item => {return item.name !== choise.name && item.food.name !== choise.food.name})
-    );
-  }
+  const [mealReceptionList, setMealReceptionList] = useState<MealReception[]>(initMealReceptionList);
 
-  const saveMealReception = () => {
-    const mealReceprion: MealReception = {
-      date: new Date(),
-      choises: currentChoises,
+  const [fixedMealReceptionList, setFixedMealReceptionList] = useState<ProcessedMealReception[]>([]);
+
+
+  function calcChoiseValue(choise_name: string) {
+    let choise_value = 1;
+    const filtered_fixed_food_list = fixedFoodList.filter(item => item.choise_name === choise_name);
+    for (const food of filtered_fixed_food_list) {
+      choise_value -= food.value_real / food.value;
     }
-    setMealReceptions([...mealReceptions, mealReceprion]);
-    setCurrentChoises([]);
+    const filtered_unfixed_food_list = unfixedFoodList.filter(item => item.choise_name === choise_name);
+    for (const food of filtered_unfixed_food_list) {
+      choise_value -= food.value_real / food.value;
+    }
+    return choise_value;
   }
 
-  const startNewDay = () => {
-    setChoises([]);
-    setCurrentChoises([]);
+  function initMealReceptionList() {
+    const meal_reception_list: MealReception[] = [];
+    for (const meal_reception_data of meal_reception_data_list) {
+      const choise_list: Choise[] = [];
+      for (const choise_data of meal_reception_data.choise_data_list) {
+        const choise_value = calcChoiseValue(choise_data.name);
+
+        if (choise_value <= 0) continue;
+
+        choise_list.push({
+          name: choise_data.name,
+          value: choise_value,
+          food_data_list: choise_data.food_data_list,
+        });
+      }
+
+      if (choise_list.length === 0) continue;
+
+      meal_reception_list.push({
+        name: meal_reception_data.name,
+        choise_list: choise_list,
+      });
+    }
+    return meal_reception_list;
   }
 
-  const choises_elements_1 = choises_data.slice(0, 3).map(choise_data => (<ChoiseView choise={choise_data} choises={choises} addChoise={addChoise} />));
-  const choises_elements_2 = choises_data.slice(3, 7).map(choise_data => (<ChoiseView choise={choise_data} choises={choises} addChoise={addChoise} />));
-  const choises_elements_3 = choises_data.slice(7, 10).map(choise_data => (<ChoiseView choise={choise_data} choises={choises} addChoise={addChoise} />));
-  const choises_elements_4 = choises_data.slice(10, 13).map(choise_data => (<ChoiseView choise={choise_data} choises={choises} addChoise={addChoise} />));
+  useEffect(() => {
+    setMealReceptionList(initMealReceptionList);
+  }, [unfixedFoodList, fixedFoodList]);
 
-  const report = mealReceptions.slice(-6).map(item => {
-    const text = item.choises.map(choise => <span>{choise.food.name} ({choise.food.value}{choise.food.value_name}), </span>);
-    return <HStack><span >{item.date.toDateString()}: </span>{text}</HStack>
+
+  const initDefault = () => {
+    setMealReceptionList(initMealReceptionList());
+
+    setEditingFood(null);
+    setFixedFoodList([]);
+    setUnfixedFoodList([])
+  }
+
+  const editFood = (choise_name: string, food_name: string) => {
+    let choise = null;
+    for (const meal_reception of mealReceptionList) {
+      choise = meal_reception.choise_list.find(item => item.name === choise_name);
+      if (choise) break;
+    }
+    console.log(choise);
+    if (!choise) throw new Error("something wrong. there is not necessary `choise_name`.");
+
+    const food_data = choise.food_data_list.find(item => item.name === food_name);
+    if (!food_data) throw new Error("something wrong. there is not necessary `food_name`.");
+
+    const editing_food: EditingFood = {
+      ...food_data,
+      choise_name: choise.name,
+      choise_value: choise.value,
+    }
+    setEditingFood(editing_food);
+  }
+
+  const applyEditingFood = (editing_food: EditingFood, food_name: string, food_value: number) => {
+    const unfixed_food: ProcessedFood = {
+      choise_name: editing_food.choise_name,
+
+      name: editing_food.name,
+      value: editing_food.value,
+      value_name: editing_food.value_name,
+
+      name_real: food_name,
+      value_real: food_value,
+    };
+    setUnfixedFoodList([...unfixedFoodList, unfixed_food]);
+    setEditingFood(null);
+  }
+
+  const cancelEditingFood = () => {
+    setEditingFood(null);
+  }
+
+  const applyMealReception = () => {
+    const fixedMealReceprion: ProcessedMealReception = {
+      date: new Date(),
+      food_list: unfixedFoodList,
+    }
+    setFixedMealReceptionList([...fixedMealReceptionList, fixedMealReceprion]);
+
+    setFixedFoodList([...fixedFoodList, ...unfixedFoodList]);
+    setUnfixedFoodList([])
+  }
+
+  const cancelUnfixedFood = (food: ProcessedFood) => {
+    setUnfixedFoodList(unfixedFoodList.filter(item => item !== food));
+  }
+
+  const meal_reception_data_list_view = mealReceptionList.map(mealReception => (
+    <MealReceptionView key={mealReception.name} meal_reception={mealReception} onApplyFood={editFood} />
+  ));
+
+  const report = fixedMealReceptionList.map(item => {
+    const text = item.food_list.map(food => {
+      const food_name = food.name === food.name_real ? food.name : `${food.name_real} / ${food.name}`;
+      const food_value = food.value === food.value_real ? food.value : `${food.value_real}/${food.value}`;
+      return <span>{food_name} ({food_value}{food.value_name}); </span>
+    });
+    return <HStack><span >{item.date.toLocaleDateString("ua-UA")}: </span>{text}</HStack>
   })
 
   return (
     <div className="App">
-      <Panel header="choise">
-        {report}
-      </Panel>
-      <MealReceptionView currentChoises={currentChoises} delChoise={delChoise} saveMealReception={saveMealReception} />
-      <Panel header="choise">
-        <Panel header="meal reception 1">
-          {choises_elements_1}
-        </Panel>
-        <Panel header="meal reception 2">
-          {choises_elements_2}
-        </Panel>
-        <Panel header="meal reception 3">
-          {choises_elements_3}
-        </Panel>
-        <Panel header="meal reception 4">
-          {choises_elements_4}
-        </Panel>
-      </Panel>
-      <Panel>
-        <Button appearance="primary" color="orange" onClick={() => startNewDay()}>start new day</Button>
-      </Panel>
+      <Tabs defaultActiveKey="1">
+        <Tabs.Tab eventKey="1" title="main">
+          <FlexboxGrid justify="end">
+            <Button appearance="primary" color="orange" onClick={() => initDefault()}>start new day</Button>
+          </FlexboxGrid>
+          <ProcessedMealReceptionView food_list={unfixedFoodList} onApply={applyMealReception} onCancelFood={cancelUnfixedFood} />
+          {editingFood && <ChoiseEdit editing_food={editingFood} onApply={applyEditingFood} onCancel={cancelEditingFood} />}
+          {!editingFood && (
+            <Panel header="meal receptions (recommendation)">
+              {meal_reception_data_list_view}
+            </Panel>
+          )}
+        </Tabs.Tab>
+        <Tabs.Tab eventKey="2" title="report">
+          {report}
+        </Tabs.Tab>
+      </Tabs>
     </div>
   );
+
 }
 
 export default App;
