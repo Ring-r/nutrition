@@ -1,43 +1,116 @@
 import { useEffect, useState } from 'react';
-import { Button, FlexboxGrid, HStack, Panel, Tabs, VStack } from 'rsuite';
+import { Button, FlexboxGrid, Panel, Tabs, Tag } from 'rsuite';
 import 'rsuite/dist/rsuite.min.css';
 import './App.css';
 import ChoiseEdit from './ChoiseEdit';
-import { Choise, db, EditingFood, getMealReveptionDataList, MealReception, MealReceptionData, ProcessedFood, ProcessedMealReception, storeName } from './data';
+import { Choise, dbName, dbReportStore, dbVersion, EditingFood, getMealReveptionDataList, MealReception, MealReceptionData, ProcessedFood } from './data';
 import MealReceptionView from './MealReceptionView';
 import ProcessedMealReceptionView from './ProcessedMealReceptionView';
+import { ReportDay, ReportDayView, ReportFullView } from './Report';
+
+const getToday = () => new Date(new Date().toDateString());
 
 function App() {
-  const [meal_reception_data_list] = useState<MealReceptionData[]>(getMealReveptionDataList());
+  const [meal_reception_data_list] = useState<MealReceptionData[]>(getMealReveptionDataList);
+
+  const [db, setDB] = useState<IDBDatabase>();
+  const [today, setToday] = useState<Date>(getToday);
 
   const [editingFood, setEditingFood] = useState<EditingFood | null>(null);
-  const [unfixedFoodList, setUnfixedFoodList] = useState<ProcessedFood[]>([]);
-  const [fixedFoodList, setFixedFoodList] = useState<ProcessedFood[]>([]);
+  const [fixedFoodList, setFixedFoodList] = useState<ProcessedFood[][]>();
+  const [unfixedFoodList, setUnfixedFoodList] = useState<ProcessedFood[]>();
 
-  const [mealReceptionList, setMealReceptionList] = useState<MealReception[]>(initMealReceptionList);
+  const [mealReceptionList, setMealReceptionList] = useState<MealReception[]>();
+  const [lastUpdateDate, setLastUpdateDate] = useState<Date>();
 
-  const [reportMealReceptionList, setReportMealReceptionList] = useState<ProcessedMealReception[]>([]);
+  useEffect(() => {
+    async function initDB() {
+      const request = indexedDB.open(dbName, dbVersion);
 
+      request.onerror = () => {
+        console.error("Database error:", request.error);
+      };
 
-  function calcChoiseValue(choise_name: string) {
-    let choise_value = 1;
-    const filtered_fixed_food_list = fixedFoodList.filter(item => item.choise_name === choise_name);
-    for (const food of filtered_fixed_food_list) {
-      choise_value -= food.value_real / food.value;
+      request.onsuccess = () => {
+        const db_ = request.result;
+        setDB(db_);
+      };
+
+      request.onupgradeneeded = function () {
+        const db_ = request.result;
+        if (!db_.objectStoreNames.contains(dbReportStore)) {
+          db_.createObjectStore(dbReportStore, { keyPath: "date", autoIncrement: false });
+          console.log("Object store created");
+        }
+      }
     }
-    const filtered_unfixed_food_list = unfixedFoodList.filter(item => item.choise_name === choise_name);
-    for (const food of filtered_unfixed_food_list) {
-      choise_value -= food.value_real / food.value;
-    }
-    return choise_value;
-  }
+    initDB();
+  }, []);
 
-  function initMealReceptionList() {
+  useEffect(() => {
+    async function initReportDay() {
+      if (!db) return;
+      if (!today) return;
+
+      const request = db.transaction([dbReportStore], "readonly").objectStore(dbReportStore).get(today);
+      request.onsuccess = () => {
+        const data: ReportDay = request.result ?? { date: today, food_list: [] };
+
+        setEditingFood(null);
+        setUnfixedFoodList([])
+        setFixedFoodList(data.food_list);
+      };
+      request.onerror = () => {
+        console.error("Unable to retrieve data:", request.error);
+      };
+    }
+    initReportDay();
+  }, [db, today]);
+
+  useEffect(() => {
+    async function saveReportDay() {
+      if (!db) return;
+      if (!today) return;
+      if (fixedFoodList === undefined) return;
+
+      const report_day: ReportDay = {
+        date: today,
+        food_list: fixedFoodList,
+      }
+      const request = db.transaction([dbReportStore], "readwrite").objectStore(dbReportStore).put(report_day);
+      request.onsuccess = () => {
+        setLastUpdateDate(new Date());
+      };
+      request.onerror = () => {
+        console.error("Unable to retrieve data:", request.error);
+      };
+    }
+    saveReportDay();
+  }, [fixedFoodList]);
+
+  useEffect(() => {
+    if (fixedFoodList === undefined) return;
+    if (unfixedFoodList === undefined) return;
+
+    function calcChoiseValue(choise_name: string, fixedFoodList: ProcessedFood[][], unfixedFoodList: ProcessedFood[]) {
+      let choise_value = 1;
+      const filtered_fixed_food_list = fixedFoodList.flat(1).filter(item => item.choise_name === choise_name);
+      for (const food of filtered_fixed_food_list) {
+        choise_value -= food.value_real / food.value;
+      }
+      const filtered_unfixed_food_list = unfixedFoodList.filter(item => item.choise_name === choise_name);
+      for (const food of filtered_unfixed_food_list) {
+        choise_value -= food.value_real / food.value;
+      }
+      return choise_value;
+    }
+
     const meal_reception_list: MealReception[] = [];
     for (const meal_reception_data of meal_reception_data_list) {
       const choise_list: Choise[] = [];
       for (const choise_data of meal_reception_data.choise_data_list) {
-        const choise_value = calcChoiseValue(choise_data.name);
+        // todo: can be optimized to calculate dict before
+        const choise_value = calcChoiseValue(choise_data.name, fixedFoodList, unfixedFoodList);
 
         if (choise_value <= 0) continue;
 
@@ -55,23 +128,14 @@ function App() {
         choise_list: choise_list,
       });
     }
-    return meal_reception_list;
-  }
 
-  useEffect(() => {
-    setMealReceptionList(initMealReceptionList);
-  }, [unfixedFoodList, fixedFoodList]);
+    setMealReceptionList(meal_reception_list);
+  }, [fixedFoodList, unfixedFoodList]);
 
-
-  const initDefault = () => {
-    setMealReceptionList(initMealReceptionList());
-
-    setEditingFood(null);
-    setFixedFoodList([]);
-    setUnfixedFoodList([])
-  }
 
   const editFood = (choise_name: string, food_name: string) => {
+    if (mealReceptionList === undefined) throw new Error("something wrong. the `mealReceptionList` is undefined.");
+
     let choise = null;
     for (const meal_reception of mealReceptionList) {
       choise = meal_reception.choise_list.find(item => item.name === choise_name);
@@ -91,6 +155,8 @@ function App() {
   }
 
   const applyEditingFood = (editing_food: EditingFood, food_name: string, food_value: number) => {
+    if (unfixedFoodList === undefined) throw new Error();
+
     const unfixed_food: ProcessedFood = {
       choise_name: editing_food.choise_name,
 
@@ -110,70 +176,42 @@ function App() {
   }
 
   const applyMealReception = () => {
-    const date = new Date(new Date().toDateString());
+    if (fixedFoodList === undefined) throw new Error();
+    if (unfixedFoodList === undefined) throw new Error();
 
-    const equalDate = (item: Date, other: Date) => {
-      return item.getFullYear() === other.getFullYear() && item.getDay() === other.getDay();
-    }
-    const fixed_meal_reception = reportMealReceptionList.find(item => equalDate(item.date, date)) ?? { date: date, food_list: [] };
-    fixed_meal_reception.food_list.push(unfixedFoodList);
-
-    setReportMealReceptionList([...reportMealReceptionList.filter(item => !equalDate(item.date, date)), fixed_meal_reception]);
-
-    const request = db.transaction([storeName], "readonly").objectStore(storeName).get(date);
-    request.onsuccess = () => {
-      const data: ProcessedMealReception = request.result ?? { date: date, food_list: [unfixedFoodList] }
-      data.food_list.push(unfixedFoodList);
-      db.transaction([storeName], "readwrite").objectStore(storeName).put(data);
-    };
-    request.onerror = () => {
-      console.error("Unable to retrieve data:", request.error);
-    };
-
-    setFixedFoodList([...fixedFoodList, ...unfixedFoodList]);
+    setFixedFoodList([...fixedFoodList, unfixedFoodList]);
     setUnfixedFoodList([])
   }
 
   const cancelUnfixedFood = (food: ProcessedFood) => {
+    if (unfixedFoodList === undefined) throw new Error();
+
     setUnfixedFoodList(unfixedFoodList.filter(item => item !== food));
   }
 
-  const meal_reception_data_list_view = mealReceptionList.map(mealReception => (
+  const meal_reception_data_list_view = mealReceptionList?.map(mealReception => (
     <MealReceptionView key={mealReception.name} meal_reception={mealReception} onApplyFood={editFood} />
   ));
-
-  function ReportFoodView(food: ProcessedFood) {
-    const food_name = food.name === food.name_real ? food.name : `${food.name_real} / ${food.name}`;
-    const food_value = food.value === food.value_real ? food.value : `${food.value_real}/${food.value}`;
-    return <span key={food.name}>{food_name} ({food_value}{food.value_name}); </span>
-  }
-  function ReportFoodListView(food_list: ProcessedFood[]) {
-    const food_list_view = food_list.map(food => { return ReportFoodView(food) });
-    return <HStack wrap>{food_list_view}</HStack>
-  }
-
-  const report_meal_reception_list_view = reportMealReceptionList.map(report_meal_reception => {
-    const report_meal_reception_view = report_meal_reception.food_list.map(food_list => { return ReportFoodListView(food_list) })
-    return <VStack><h2>{report_meal_reception.date.toDateString()}</h2>{report_meal_reception_view}</VStack>
-  })
 
   return (
     <div className="App">
       <Tabs defaultActiveKey="1">
         <Tabs.Tab eventKey="1" title="main">
+          {fixedFoodList ? <ReportDayView report_day={{ date: today, food_list: fixedFoodList }} /> : <Tag>`fixedFoodList` is not ready...</Tag>}
           <FlexboxGrid justify="end">
-            <Button appearance="primary" color="orange" onClick={() => initDefault()}>start new day</Button>
+            <Button appearance="primary" color="orange" onClick={() => setToday(getToday())}>start this day</Button>
           </FlexboxGrid>
-          <ProcessedMealReceptionView food_list={unfixedFoodList} onApply={applyMealReception} onCancelFood={cancelUnfixedFood} />
-          {editingFood && <ChoiseEdit editing_food={editingFood} onApply={applyEditingFood} onCancel={cancelEditingFood} />}
-          {!editingFood && (
+          {unfixedFoodList ? <ProcessedMealReceptionView food_list={unfixedFoodList} onApply={applyMealReception} onCancelFood={cancelUnfixedFood} /> : <Tag>`unfixedFoodList` is not ready...</Tag>}
+          {editingFood ? (
+            <ChoiseEdit editing_food={editingFood} onApply={applyEditingFood} onCancel={cancelEditingFood} />
+          ) : (
             <Panel header="meal receptions (recommendation)">
               {meal_reception_data_list_view}
             </Panel>
           )}
         </Tabs.Tab>
         <Tabs.Tab eventKey="2" title="report">
-          {report_meal_reception_list_view}
+          {db ? <ReportFullView db={db} last_update_date={lastUpdateDate} /> : <Tag>db is not ready...</Tag>}
         </Tabs.Tab>
       </Tabs>
     </div>

@@ -1,5 +1,3 @@
-
-
 export interface FoodData {
   name: string;
   value: number;
@@ -178,7 +176,6 @@ export const getMealReveptionDataList = () => {
   return data;
 }
 
-
 export interface Choise {
   name: string;
   value: number;
@@ -208,31 +205,6 @@ export interface ProcessedFood extends DefaultFood {
 }
 
 
-export interface ProcessedMealReception {
-  date: Date;
-  food_list: ProcessedFood[][];
-}
-
-const dbName = "nutrition";
-export const storeName = "store";
-const currentDataVersion = 1;
-export let db: IDBDatabase;
-
-const request = indexedDB.open(dbName, currentDataVersion);
-
-request.onerror = function (event) {
-  console.error("Database error:", request.error);
-};
-
-request.onsuccess = function (event) {
-  db = request.result;
-  console.log("Database opened successfully");
-};
-
-request.onupgradeneeded = function (event) {
-  db = request.result;
-  if (!db.objectStoreNames.contains(storeName)) {
-    const objectStore = db.createObjectStore(storeName, { keyPath: "date", autoIncrement: false });
-    console.log("Object store created");
-  }
-}
+export const dbName = "nutrition";
+export const dbReportStore = "report";
+export const dbVersion = 1;
