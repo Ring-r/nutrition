@@ -44,8 +44,12 @@ export function PreparedFoodListView({ food_list, onApply, onCancelFood }: Prepa
 export interface ProcessedFood extends PreparedFood {
 }
 
+function ProcessedFoodToString(food: PreparedFood) {
+  return `${food.name_real} (${food.value_real}${food.value_name})`;
+}
+
 function ProcessedFoodView({ food }: { food: ProcessedFood }) {
-  return <span>{PreparedFoodToString(food)}; </span>
+  return <span>{ProcessedFoodToString(food)}; </span>
 }
 
 export function ProcessedFoodListView({ food_list }: { food_list: ProcessedFood[] }) {
