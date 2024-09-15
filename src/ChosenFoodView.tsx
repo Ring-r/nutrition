@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Button, HStack, Input, InputNumber } from 'rsuite';
-import 'rsuite/dist/rsuite.min.css';
-import './App.css';
-import { EditingFood } from './data';
+import { FoodBase } from './FoodView';
 
-interface ChoiseParams {
-  editing_food: EditingFood;
-  onApply: (editing_food: EditingFood, food_name: string, food_value: number) => void;
+export interface ChosenFood extends FoodBase {
+  choise_value: number;
+}
+
+interface ChosenFoodViewParams {
+  food: ChosenFood;
+  onApply: (chosen_food: ChosenFood, food_name: string, food_value: number) => void;
   onCancel: () => void;
 }
 
-export function ChoiseEdit({ editing_food, onApply, onCancel }: ChoiseParams) {
-  const [foodName, setFoodName] = useState<string>(editing_food.name);
-  const food_value_max = editing_food.choise_value * editing_food.value;
+function ChosenFoodView({ food, onApply, onCancel }: ChosenFoodViewParams) {
+  const [foodName, setFoodName] = useState<string>(food.name);
+  const food_value_max = food.choise_value * food.value;
   const [foodValue, setFoodValue] = useState<string | number | null>(food_value_max);
   const [foodValueError, setFoodValueError] = useState<boolean>(false);
   const [foodValueTypeError, setFoodValueTypeError] = useState<boolean>(false);
@@ -47,16 +49,16 @@ export function ChoiseEdit({ editing_food, onApply, onCancel }: ChoiseParams) {
 
   return (
     <HStack>
-      <Button appearance="ghost" color="green" disabled={foodValueTypeError} onClick={() => onApply(editing_food, foodName, getFoodValue() ?? 0)}>V</Button>
+      <Button appearance="ghost" color="green" disabled={foodValueTypeError} onClick={() => onApply(food, foodName, getFoodValue() ?? 0)}>V</Button>
 
-      <Input color="blue" disabled defaultValue={`${editing_food.name} (${food_value_max}${editing_food.value_name})`} />
+      <Input color="blue" disabled defaultValue={`${food.name} (${food_value_max}${food.value_name})`} />
 
       <Input value={foodName} onChange={setFoodName} />
-      <InputNumber color='red' value={foodValue} onChange={setFoodValue} formatter={value => `${value} ${editing_food.value_name}`} style={foodValueError ? { borderColor: "red" } : undefined} />
+      <InputNumber color='red' value={foodValue} onChange={setFoodValue} formatter={value => `${value} ${food.value_name}`} style={foodValueError ? { borderColor: "red" } : undefined} />
 
       <Button appearance="ghost" color="red" onClick={() => onCancel()}>X</Button>
     </HStack>
   );
 }
 
-export default ChoiseEdit;
+export default ChosenFoodView;

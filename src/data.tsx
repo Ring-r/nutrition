@@ -176,34 +176,6 @@ export const getMealReveptionDataList = () => {
   return data;
 }
 
-export interface Choise {
-  name: string;
-  value: number;
-  food_data_list: FoodData[];
-}
-
-export interface MealReception {
-  name: string;
-  choise_list: Choise[];
-}
-
-
-interface DefaultFood {
-  choise_name: string;
-  name: string;
-  value: number;
-  value_name: string;
-}
-
-export interface EditingFood extends DefaultFood {
-  choise_value: number;
-}
-
-export interface ProcessedFood extends DefaultFood {
-  name_real: string;
-  value_real: number;
-}
-
 
 export const dbName = "nutrition";
 export const dbReportStore = "report";

@@ -1,32 +1,7 @@
 import { useEffect, useState } from "react";
-import { DateRangePicker, HStack, Loader, VStack } from "rsuite";
-import { ProcessedFood, dbReportStore } from "./data";
-
-function FoodAsTextView({ food }: { food: ProcessedFood }) {
-  const food_name = food.name === food.name_real ? food.name : `${food.name_real} / ${food.name}`;
-  const food_value = food.value === food.value_real ? food.value : `${food.value_real}/${food.value}`;
-  return <span>{food_name} ({food_value}{food.value_name}); </span>
-}
-
-function FoodListAsTextView({ food_list }: { food_list: ProcessedFood[] }) {
-  const food_list_view = food_list.map(report_food =>
-    <FoodAsTextView key={report_food.name} food={report_food} />
-  );
-  return (
-    <HStack wrap>{food_list_view}</HStack>
-  );
-}
-
-function ReportDayFoodListView({ report_day_food_list }: { report_day_food_list: ProcessedFood[][] }) {
-  const report_day_food_list_view = report_day_food_list.map((food_list, index) =>
-    <FoodListAsTextView key={index} food_list={food_list} />
-  );
-  return (
-    <VStack>
-      {report_day_food_list_view}
-    </VStack>
-  );
-}
+import { DateRangePicker, Loader, VStack } from "rsuite";
+import { dbReportStore } from "./data";
+import { ProcessedFood, ProcessedFoodListView } from "./FoodView";
 
 export interface ReportDay {
   date: Date;
@@ -37,7 +12,13 @@ export function ReportDayView({ report_day }: { report_day: ReportDay }) {
   return (
     <>
       <h2>{report_day.date.toDateString()}</h2>
-      <ReportDayFoodListView report_day_food_list={report_day.food_list} />
+      <VStack>
+        {
+          report_day.food_list.map((food_list, index) =>
+            <ProcessedFoodListView key={index} food_list={food_list} />
+          )
+        }
+      </VStack>
     </>
   );
 }
@@ -73,19 +54,20 @@ export function ReportFullView({ db, last_update_date }: { db: IDBDatabase, last
   }, [db, dateRange, last_update_date]);
 
   function ReportDayListView() {
-    const report_day_list_view = (reportDayList ?? []).map(report_day =>
-      <ReportDayView key={report_day.date.toDateString()} report_day={report_day} />
-    );
-    return (
+    return !reportDayList ? <Loader content="report day list..." /> : (
       <VStack>
-        {report_day_list_view}
+        {
+          reportDayList.map(report_day =>
+            <ReportDayView key={report_day.date.toDateString()} report_day={report_day} />
+          )
+        }
       </VStack>
     );
   }
 
-  return !dateRange || !reportDayList ? <Loader /> : (
+  return (
     <>
-      <DateRangePicker cleanable={false} value={dateRange} onChange={setDateRange} />
+      {!dateRange ? <Loader content="data range..." /> : <DateRangePicker cleanable={false} value={dateRange} onChange={setDateRange} />}
       <ReportDayListView />
     </>
   );
