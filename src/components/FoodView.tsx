@@ -1,4 +1,5 @@
-import { Button, HStack, Input, Panel } from 'rsuite';
+import { useEffect, useRef, useState } from 'react';
+import { Button, FlexboxGrid, HStack, Input, Panel } from 'rsuite';
 
 export interface FoodBase {
   choise_name: string;
@@ -25,9 +26,83 @@ export interface PreparedFoodListViewParams {
 }
 
 export function PreparedFoodListView({ food_list, onApply, onCancelFood }: PreparedFoodListViewParams) {
+  const [stream, setStream] = useState<MediaStream | null>();
+  const [imageSourceData, setImageSourceData] = useState<string>();
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!videoRef?.current) return;
+
+    if (stream) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play();
+    }
+    else {
+      // todo: ???
+    }
+  }, [videoRef, stream]);
+
+
+  useEffect(() => {
+    if (!imageSourceData) return;
+    if (!imageRef?.current) return;
+
+    imageRef.current.setAttribute("src", imageSourceData);
+  }, [imageSourceData]);
+
+
+  const onPhotoClick = () => {
+    if (!stream) {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
+        .then((stream_) => {
+          setStream(stream_);
+        })
+        .catch((err) => {
+          console.error(`An error occurred: ${err}`);
+        });
+      return;
+    }
+
+    if (!canvasRef?.current) return;
+
+    const context = canvasRef.current.getContext("2d");
+    if (!context) return;
+
+    if (!videoRef?.current) return;
+
+    const width = videoRef.current.videoWidth;
+    const height = videoRef.current.videoHeight;
+
+    canvasRef.current.width = width;
+    canvasRef.current.height = height;
+
+    context.drawImage(videoRef.current, 0, 0, width, height);
+
+    const data = canvasRef.current.toDataURL("image/png");
+    setImageSourceData(data);
+
+    stream.getTracks().forEach((track) => {
+      if (track.readyState == 'live' && track.kind === 'video') {
+        track.stop();
+      }
+    });
+    setStream(null);
+  }
+
   return (
     <Panel header='meal reception' bordered>
-      <Button disabled>upload image</Button>
+      <FlexboxGrid justify="center">
+        <video hidden={!stream} ref={videoRef} />
+        <canvas hidden ref={canvasRef} />
+        <img hidden={stream !== null || !imageSourceData} ref={imageRef} alt="The screen capture will appear in this box." />
+      </FlexboxGrid>
+      <FlexboxGrid justify="center">
+        <Button onClick={onPhotoClick}>photo</Button>
+      </FlexboxGrid>
       {
         food_list.map(food => (
           <HStack key={`${food.choise_name}_${food.name}`}>
