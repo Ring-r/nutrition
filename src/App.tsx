@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Button, FlexboxGrid, Panel, Tabs, Tag } from 'rsuite';
 import 'rsuite/dist/rsuite.min.css';
 import './App.css';
-import ChosenFoodView, { ChosenFood } from './ChosenFoodView';
+import ChosenFoodView, { ChosenFood } from './components/ChosenFoodView';
+import { PreparedFood, PreparedFoodListView, ProcessedFood } from './components/FoodView';
+import MealReceptionView, { Choise, MealReception } from './components/MealReceptionView';
+import { ReportDay, ReportDayView, ReportFullView } from './components/Report';
 import { dbName, dbReportStore, dbVersion, getMealReveptionDataList, MealReceptionData } from './data';
-import { PreparedFood, PreparedFoodListView, ProcessedFood } from './FoodView';
-import MealReceptionView, { Choise, MealReception } from './MealReceptionView';
-import { ReportDay, ReportDayView, ReportFullView } from './Report';
 
 const getToday = () => new Date(new Date().toDateString());
 

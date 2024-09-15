@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DateRangePicker, Loader, VStack } from "rsuite";
-import { dbReportStore } from "./data";
+import { dbReportStore } from "../data";
 import { ProcessedFood, ProcessedFoodListView } from "./FoodView";
 
 export interface ReportDay {

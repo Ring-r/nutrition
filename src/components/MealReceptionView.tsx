@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, HStack, Panel, Text } from 'rsuite';
-import { FoodData } from './data';
+import { FoodData } from '../data';
 
 export interface Choise {
   name: string;
