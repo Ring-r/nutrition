@@ -57,7 +57,12 @@ export function PreparedFoodListView({ food_list, onApply, onCancelFood }: Prepa
   const onPhotoClick = () => {
     if (!stream) {
       navigator.mediaDevices
-        .getUserMedia({ video: true, audio: false })
+        .getUserMedia({
+          audio: false,
+          video: {
+            facingMode: 'environment'
+          }
+        })
         .then((stream_) => {
           setStream(stream_);
         })
